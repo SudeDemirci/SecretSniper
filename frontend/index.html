@@ -17,7 +17,8 @@
                 <span class="logo-text">SecretSniper</span>
             </div>
             <nav class="nav-menu">
-                <a href="#" class="nav-item active"><i class="fa-solid fa-code"></i> Live Scanner</a>
+                <a href="#" class="nav-item active" id="nav-scanner"><i class="fa-solid fa-code"></i> Live Scanner</a>
+                <a href="#" class="nav-item" id="nav-history"><i class="fa-solid fa-clock-rotate-left"></i> History Log</a>
                 <a href="#" class="nav-item"><i class="fa-solid fa-shield-halved"></i> Gate Rules</a>
             </nav>
         </aside>
@@ -33,61 +34,85 @@
             </header>
 
             <div class="content-wrapper">
-                <section class="card input-section">
-                    <h2>Test Code for Secrets</h2>
-                    <p class="subtitle">Paste your code below to simulate a git commit. The scanner will block the commit if any API keys, tokens, or passwords are detected.</p>
-                    
-                    <textarea id="code-input" placeholder="def connect_db():\n    password = 'my_super_secret_password'\n    # Paste code here..."></textarea>
-                    
-                    <div class="actions">
-                        <button id="scan-btn" class="btn-primary">
-                            <i class="fa-solid fa-magnifying-glass"></i> Simulate Git Commit
-                        </button>
-                    </div>
-                </section>
+                
+                <!-- VIEW 1: LIVE SCANNER -->
+                <div id="view-scanner">
+                    <section class="card input-section">
+                        <h2>Test Code for Secrets</h2>
+                        <p class="subtitle">Paste your code below to simulate a git commit. The scanner will block the commit if any API keys, tokens, or passwords are detected.</p>
+                        
+                        <textarea id="code-input" placeholder="def connect_db():\n    password = 'my_super_secret_password'\n    # Paste code here..."></textarea>
+                        
+                        <div class="actions">
+                            <button id="scan-btn" class="btn-primary">
+                                <i class="fa-solid fa-magnifying-glass"></i> Simulate Git Commit
+                            </button>
+                        </div>
+                    </section>
 
-                <div id="loading-state" class="state-container hidden">
-                    <div class="spinner"></div>
-                    <p>Analyzing code with Regex & YARA rules...</p>
+                    <div id="loading-state" class="state-container hidden">
+                        <div class="spinner"></div>
+                        <p>Analyzing code with Regex & YARA rules...</p>
+                    </div>
+
+                    <div id="results-dashboard" class="dashboard hidden">
+                        <div class="stats-row">
+                            <div class="stat-card status-card">
+                                <h3 class="stat-title">Commit Status (Quality Gate)</h3>
+                                <div class="status-indicator" id="gate-status"></div>
+                            </div>
+                            <div class="stat-card">
+                                <h3 class="stat-title">Total Secrets Blocked</h3>
+                                <div class="stat-value critical" id="count-secrets">0</div>
+                            </div>
+                        </div>
+
+                        <section class="details-section card">
+                            <div class="section-header">
+                                <h2>Intercepted Secrets</h2>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="vuln-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Line #</th>
+                                            <th>Secret Type</th>
+                                            <th>Masked Value</th>
+                                            <th>Action Taken</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="secrets-table-body">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="no-vuln-msg" class="empty-state hidden">
+                                <i class="fa-solid fa-check-circle success-text"></i>
+                                <p>Code is clean! Commit allowed to proceed.</p>
+                            </div>
+                        </section>
+                    </div>
                 </div>
 
-                <!-- Dashboard Results -->
-                <div id="results-dashboard" class="dashboard hidden">
-                    
-                    <div class="stats-row">
-                        <div class="stat-card status-card">
-                            <h3 class="stat-title">Commit Status (Quality Gate)</h3>
-                            <div class="status-indicator" id="gate-status"></div>
-                        </div>
-
-                        <div class="stat-card">
-                            <h3 class="stat-title">Total Secrets Blocked</h3>
-                            <div class="stat-value critical" id="count-secrets">0</div>
-                        </div>
-                    </div>
-
-                    <section class="details-section card">
+                <!-- VIEW 2: HISTORY LOG -->
+                <div id="view-history" class="hidden">
+                    <section class="card">
                         <div class="section-header">
-                            <h2>Intercepted Secrets</h2>
+                            <h2>Past Security Incidents</h2>
+                            <p class="subtitle">Historical log of all intercepted and blocked secrets, loaded directly from the SQLite database.</p>
                         </div>
-                        <div class="table-responsive">
+                        <div class="table-responsive" style="margin-top:20px;">
                             <table class="vuln-table">
                                 <thead>
                                     <tr>
-                                        <th>Line #</th>
+                                        <th>Date / Time</th>
                                         <th>Secret Type</th>
                                         <th>Masked Value</th>
-                                        <th>Action Taken</th>
+                                        <th>Status</th>
                                     </tr>
                                 </thead>
-                                <tbody id="secrets-table-body">
-                                    <!-- Rows injected via JS -->
+                                <tbody id="history-table-body">
                                 </tbody>
                             </table>
-                        </div>
-                        <div id="no-vuln-msg" class="empty-state hidden">
-                            <i class="fa-solid fa-check-circle success-text"></i>
-                            <p>Code is clean! Commit allowed to proceed.</p>
                         </div>
                     </section>
                 </div>

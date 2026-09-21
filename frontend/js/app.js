@@ -1,21 +1,45 @@
 const API_BASE = "http://127.0.0.1:8001/api";
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Navigation
+    const navScanner = document.getElementById("nav-scanner");
+    const navHistory = document.getElementById("nav-history");
+    const viewScanner = document.getElementById("view-scanner");
+    const viewHistory = document.getElementById("view-history");
+
+    // Scanner UI
     const scanBtn = document.getElementById("scan-btn");
     const codeInput = document.getElementById("code-input");
-    
     const loadingState = document.getElementById("loading-state");
     const resultsDashboard = document.getElementById("results-dashboard");
-    
-    // Stats
     const gateStatus = document.getElementById("gate-status");
     const countSecrets = document.getElementById("count-secrets");
-    
-    // Table
     const secretsTableBody = document.getElementById("secrets-table-body");
     const noVulnMsg = document.getElementById("no-vuln-msg");
-    const tableResponsive = document.querySelector(".table-responsive");
+    const tableResponsive = document.querySelector("#view-scanner .table-responsive");
 
+    // History UI
+    const historyTableBody = document.getElementById("history-table-body");
+
+    // Switch Views
+    navScanner.addEventListener("click", (e) => {
+        e.preventDefault();
+        navScanner.classList.add("active");
+        navHistory.classList.remove("active");
+        viewScanner.classList.remove("hidden");
+        viewHistory.classList.add("hidden");
+    });
+
+    navHistory.addEventListener("click", (e) => {
+        e.preventDefault();
+        navHistory.classList.add("active");
+        navScanner.classList.remove("active");
+        viewHistory.classList.remove("hidden");
+        viewScanner.classList.add("hidden");
+        fetchHistory(); // Fetch data when tab opens
+    });
+
+    // Scanner Logic
     scanBtn.addEventListener("click", async () => {
         const code = codeInput.value.trim();
         if (!code) {
@@ -23,7 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // UI Reset
         resultsDashboard.classList.add("hidden");
         loadingState.classList.remove("hidden");
         scanBtn.disabled = true;
@@ -31,24 +54,17 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await fetch(`${API_BASE}/scan-secrets`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ code: code, filename: "test.py" })
             });
 
-            if (!response.ok) {
-                throw new Error("API request failed: " + response.statusText);
-            }
+            if (!response.ok) throw new Error("API request failed");
 
             const data = await response.json();
-            
-            // Populate data
             populateDashboard(data);
             
             loadingState.classList.add("hidden");
             resultsDashboard.classList.remove("hidden");
-
         } catch (err) {
             console.error(err);
             alert("Error: " + err.message);
@@ -59,7 +75,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function populateDashboard(data) {
-        // Status Gate
         if (data.status === "PASSED") {
             gateStatus.innerHTML = `<div class="status-pass-badge"><i class="fa-solid fa-check-circle"></i> COMMIT ALLOWED</div>`;
             gateStatus.className = "status-indicator status-pass";
@@ -68,11 +83,9 @@ document.addEventListener("DOMContentLoaded", () => {
             gateStatus.className = "status-indicator status-fail";
         }
 
-        // Counts
         countSecrets.textContent = data.total_secrets;
-
-        // Table
         secretsTableBody.innerHTML = "";
+
         if (!data.secrets_found || data.secrets_found.length === 0) {
             tableResponsive.classList.add("hidden");
             noVulnMsg.classList.remove("hidden");
@@ -90,6 +103,42 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
                 secretsTableBody.appendChild(tr);
             });
+        }
+    }
+
+    // History Logic
+    async function fetchHistory() {
+        try {
+            historyTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Loading records...</td></tr>`;
+            
+            const response = await fetch(`${API_BASE}/history`);
+            if (!response.ok) throw new Error("Failed to fetch history");
+
+            const records = await response.json();
+            
+            historyTableBody.innerHTML = "";
+            if (records.length === 0) {
+                historyTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No security incidents recorded.</td></tr>`;
+                return;
+            }
+
+            records.forEach(record => {
+                const tr = document.createElement("tr");
+                // Format date string from database
+                const dateObj = new Date(record.detected_at);
+                const dateStr = dateObj.toLocaleString();
+                
+                tr.innerHTML = `
+                    <td style="color: #5E6C84; font-size: 13px;">${dateStr}</td>
+                    <td style="font-weight: 600;">${record.secret_type}</td>
+                    <td style="font-family: monospace;">${record.masked_value}</td>
+                    <td><span class="badge badge-critical">BLOCKED</span></td>
+                `;
+                historyTableBody.appendChild(tr);
+            });
+        } catch (err) {
+            console.error(err);
+            historyTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: red;">Failed to load history. Backend running?</td></tr>`;
         }
     }
 });
