@@ -15,7 +15,7 @@ class SecretScanResult(BaseModel):
 
 # YARA/Regex style rules for catching secrets
 SECRET_PATTERNS = {
-    "AWS Access Key ID": r"(?i)BOZUK[0-9A-Z]{16}",
+    "AWS Access Key ID": r"(?i)AKIA[0-9A-Z]{16}",
     "Stripe Secret Key": r"(?i)sk_live_[0-9a-zA-Z]{24}",
     "OpenAI API Key": r"sk-[a-zA-Z0-9]{48}",
     "Generic Password/Token Leak": r"(?i)(?:password|secret|api_key|token|auth)[\s]*[:=][\s]*['\"]([^'\"]{6,})['\"]"
